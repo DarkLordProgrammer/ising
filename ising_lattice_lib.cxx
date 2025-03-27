@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <vector>
 #include <array>
+#include <numeric> // for accumulate
  
 using namespace std;
 

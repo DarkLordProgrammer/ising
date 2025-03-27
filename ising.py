@@ -213,10 +213,14 @@ def run_ising_lattice(inp, T_final, skip_print=False):
         # loop through the analyze section of generators
         E_avg = []
         M_avg = []
+        cV_avg = []
+        Chi_avg = []
         for T, B, step in zip(T_generator, B_generator, range(inp['n_analyze'])):
             lattice.step(T,B)
             E_avg.append(lattice.get_E())
             M_avg.append(lattice.get_M())
+            cV_avg.append(lattice.get_cV(T))
+            Chi_avg.append(lattice.get_Chi(T))
             progress.check()
         progress.check(True)
         spin_correlation = np.array(lattice.calc_auto_correlation())
@@ -225,6 +229,8 @@ def run_ising_lattice(inp, T_final, skip_print=False):
         return (
             np.array(E_avg),
             np.array(M_avg),
+            np.array(cV_avg),
+            np.array(Chi_avg),
             np.array(spin_correlation)
         )
 
@@ -251,7 +257,7 @@ def plot_graphs(data): #T,E_mean,E_std,M_mean,M_std): #plot graphs at end
     plt.figure(2)
     plt.errorbar(dat[:,0], np.absolute(dat[:,3]), yerr=dat[:,4], uplims=True, lolims=True,fmt='o')
     plt.xlabel('Temperature')
-    plt.ylabel('Aveage Site Magnetization')
+    plt.ylabel('Average Site Magnetization')
     plt.show()
 
 def get_filenames(inp): #make data folder if doesn't exist, then specify filename
@@ -293,7 +299,7 @@ def print_results(inp, data, corr):
         writer.writerow(['N', 'n_steps', 'n_analyze', 'flip_perc'])
         writer.writerow([inp['N'], inp['n_steps'], inp['n_analyze'], inp['flip_perc']])
         writer.writerow([])
-        writer.writerow(['Temp','E_mean','E_std','M_mean','M_std'])
+        writer.writerow(['Temp','E_mean','E_std','M_mean','M_std', 'cV_mean','cV_std','Chi_mean','Chi_std'])
         for entry in data:
             writer.writerow(entry)
         # for t, e_mean, e_std, m_mean, m_std in zip(T, E_mean, E_std, M_mean, M_std):
@@ -314,8 +320,8 @@ def run_indexed_process( inp, T, data_listener):
 #         temp, n, num_steps, num_burnin, num_analysis, flip_prop, j, b, data_filename, corr_filename, data_listener, corr_listener):
     print("Starting Temp {0}".format(round(T,3)))
     try:
-        E, M, C = run_ising_lattice(inp, T, skip_print=True)
-        data_listener.put(([T,E.mean(),E.std(), M.mean(), M.std()], [T,]+[x[1] for x in C]))
+        E, M, cV, Chi, C = run_ising_lattice(inp, T, skip_print=True)
+        data_listener.put(([T,E.mean(),E.std(), M.mean(), M.std(), cV.mean(), cV.std(), Chi.mean(), Chi.std()], [T,]+[x[1] for x in C]))
         # corr_listener.put([T,]+[x[1] for x in C])
         print("Finished Temp {0}".format(round(T,3)))
         return True
@@ -389,8 +395,8 @@ def run_single_core(inp):
     data = []
     corr = []
     for temp in make_T_array(inp):
-        E, M, C = run_ising_lattice(inp, temp, skip_print=inp['skip_prog_print'])
-        data.append( (temp, E.mean(), E.std(), M.mean(), M.std() ) )
+        E, M, cV, Chi, C = run_ising_lattice(inp, temp, skip_print=inp['skip_prog_print'])
+        data.append( (temp, E.mean(), E.std(), M.mean(), M.std(), cV.mean(), cV.std(), Chi.mean(), Chi.std()) )
         corr.append([temp,]+[x[1] for x in C])
 
     print_results(inp, data, corr)
