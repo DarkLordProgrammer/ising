@@ -213,25 +213,22 @@ def run_ising_lattice(inp, T_final, skip_print=False):
         # loop through the analyze section of generators
         E_avg = []
         M_avg = []
-        cV_avg = []
-        chi_avg = []
+        spin_correlations = []
+        
         for T, B, step in zip(T_generator, B_generator, range(inp['n_analyze'])):
             lattice.step(T,B)
             E_avg.append(lattice.get_E())
             M_avg.append(lattice.get_M())
-            cV_avg.append(lattice.get_cV(T))
-            chi_avg.append(lattice.get_chi(T))
+            spin_correlations.append(np.array(lattice.calc_auto_correlation()))
             progress.check()
         progress.check(True)
-        spin_correlation = np.array(lattice.calc_auto_correlation())
+
 
         lattice.free_memory()
         return (
             np.array(E_avg),
             np.array(M_avg),
-            np.array(cV_avg),
-            np.array(chi_avg),
-            np.array(spin_correlation)
+            np.array(spin_correlations)#List of correlations lists (i.e. an element is the array of correlations with different offsets)
         )
 
     except KeyboardInterrupt:
@@ -320,8 +317,13 @@ def run_indexed_process( inp, T, data_listener):
 #         temp, n, num_steps, num_burnin, num_analysis, flip_prop, j, b, data_filename, corr_filename, data_listener, corr_listener):
     print("Starting Temp {0}".format(round(T,3)))
     try:
-        E, M, cV, chi, C = run_ising_lattice(inp, T, skip_print=True)
-        data_listener.put(([T,E.mean(),E.std(), M.mean(), M.std(), cV.mean(), cV.std(), chi.mean(), chi.std()], [T,]+[x[1] for x in C]))
+        E, M, xi = run_ising_lattice(inp, T, skip_print=True)
+        E_mean = np.mean(E)
+        E_std = np.std(E)
+        M_mean = np.mean(M)
+        M_std = np.std(M)
+        
+        data_listener.put(([T,E_mean,E_std, M_mean, M_std], [T,]+[x[1] for x in C]))
         # corr_listener.put([T,]+[x[1] for x in C])
         print("Finished Temp {0}".format(round(T,3)))
         return True
