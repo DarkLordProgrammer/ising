@@ -296,7 +296,7 @@ def print_results(inp, data, corr):
         writer.writerow(['N', 'n_steps', 'n_analyze', 'flip_perc'])
         writer.writerow([inp['N'], inp['n_steps'], inp['n_analyze'], inp['flip_perc']])
         writer.writerow([])
-        writer.writerow(['Temp','E_mean','E_std','M_mean','M_std', 'cV_mean','cV_std','chi_mean','chi_std'])
+        writer.writerow(['Temp','E_mean','E_std','M_mean','M_std'])
         for entry in data:
             writer.writerow(entry)
         # for t, e_mean, e_std, m_mean, m_std in zip(T, E_mean, E_std, M_mean, M_std):
@@ -317,13 +317,15 @@ def run_indexed_process( inp, T, data_listener):
 #         temp, n, num_steps, num_burnin, num_analysis, flip_prop, j, b, data_filename, corr_filename, data_listener, corr_listener):
     print("Starting Temp {0}".format(round(T,3)))
     try:
-        E, M, xi = run_ising_lattice(inp, T, skip_print=True)
+        E, M, R = run_ising_lattice(inp, T, skip_print=True) #Lists of microstate values for the analyze stage
         E_mean = np.mean(E)
         E_std = np.std(E)
         M_mean = np.mean(M)
         M_std = np.std(M)
+        R_mean = np.mean(R)
+        R_std = np.std(R)
         
-        data_listener.put(([T,E_mean,E_std, M_mean, M_std], [T,]+[x[1] for x in C]))
+        data_listener.put(([T,E_mean,E_std, M_mean, M_std], [T,R_mean,R_std]))
         # corr_listener.put([T,]+[x[1] for x in C])
         print("Finished Temp {0}".format(round(T,3)))
         return True
@@ -374,7 +376,6 @@ def run_multi_core(inp):
     # corr_listener = manager.Queue()    
     pool = mp.Pool(mp.cpu_count())
 
-
     # arrays of results:
     data = {'data':[], 'corr':[]}
     # corr = []
@@ -397,9 +398,15 @@ def run_single_core(inp):
     data = []
     corr = []
     for temp in make_T_array(inp):
-        E, M, cV, chi, C = run_ising_lattice(inp, temp, skip_print=inp['skip_prog_print'])
-        data.append( (temp, E.mean(), E.std(), M.mean(), M.std(), cV.mean(), cV.std(), chi.mean(), chi.std()) )
-        corr.append([temp,]+[x[1] for x in C])
+        E, M, R = run_ising_lattice(inp, temp, skip_print=inp['skip_prog_print'])
+        E_mean = np.mean(E)
+        E_std = np.std(E)
+        M_mean = np.mean(M)
+        M_std = np.std(M)
+        R_mean = np.mean(R)
+        R_std = np.std(R)
+        data.append( (E_mean, E_std, M_mean, M_std) )
+        corr.append( (temp, R_mean, R_std) )
 
     print_results(inp, data, corr)
 

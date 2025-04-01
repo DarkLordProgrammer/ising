@@ -50,15 +50,7 @@ class IsingLattice(object):
             self.neighbors = signal.convolve2d(self.spin,self.conv_mat,mode='same',boundary='wrap')
         return float(-self.J*(np.sum((self.spin*self.neighbors)))/2.0)/float(self.NN) - float(self.B)*self.get_M()
     def get_M(self):
-        return float(np.sum(self.spin))/float(self.NN)
-    def get_cV(self,T):
-        if type(self.neighbors) == type(None):
-            self.neighbors = signal.convolve2d(self.spin,self.conv_mat,mode='same',boundary='wrap')
-        return (float(np.sum((self.spin*self.neighbors)**2))/float(self.NN) - (self.get_E())**2) / (T**2)
-    def get_Chi(self,T):
-        if type(self.neighbors) == type(None):
-            self.neighbors = signal.convolve2d(self.spin,self.conv_mat,mode='same',boundary='wrap')
-        return (float(np.sum((self.spin*self.neighbors)))/float(self.NN) - (self.get_M())**2) / T
+        return float(np.sum(self.spin))/float(self.NN)    
     def calc_auto_correlation(self):
         # n = len(spin)
         corr_array = []
