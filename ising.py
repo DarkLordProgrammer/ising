@@ -74,7 +74,7 @@ def set_input(cmd_line_args):
     inp['t_step']     = 0.1    # step size from min to max temperature
     inp['t_top']      = 4.0    # start temperature (arbitrary; feel free to change)
     inp['N']          = 10     # sqrt(lattice size) (i.e. lattice = N^2 points
-    inp['n_steps']    = 100000  # number of lattice steps in simulation
+    inp['n_steps']    = 10000  # number of lattice steps in simulation
     inp['n_burnin']   = int(0.2*inp['n_steps'])   # optional parameter, used as naive default
     inp['n_analyze']  = int(0.5*inp['n_steps'])  # number of lattice steps at end of simulation calculated for averages and std.dev.
     # inp['J']          = 1.0    # **great** default value -- spin-spin interaction strength
@@ -213,13 +213,19 @@ def run_ising_lattice(inp, T_final, skip_print=False):
         # loop through the analyze section of generators
         E_avg = []
         M_avg = []
-        spin_correlations = []
+        '''
+        List of spin autocorrelations lists
+        R[i][j] where i is the step index (i=0 being the first step in the analyze stage),
+        j is the offset index (j=0 being d=1)
+        Note T_final is a parameter of this whole method, which is called multiple times per trial
+        '''
+        R = []
         
         for T, B, step in zip(T_generator, B_generator, range(inp['n_analyze'])):
             lattice.step(T,B)
             E_avg.append(lattice.get_E())
             M_avg.append(lattice.get_M())
-            spin_correlations.append(np.array(lattice.calc_auto_correlation()))
+            R.append(np.array(lattice.calc_auto_correlation()))
             progress.check()
         progress.check(True)
 
@@ -228,7 +234,7 @@ def run_ising_lattice(inp, T_final, skip_print=False):
         return (
             np.array(E_avg),
             np.array(M_avg),
-            np.array(spin_correlations)#List of correlations lists (i.e. an element is the array of correlations with different offsets)
+            np.array(R)
         )
 
     except KeyboardInterrupt:
@@ -307,9 +313,15 @@ def print_results(inp, data, corr):
         writer.writerow(['N', 'n_steps', 'n_analyze', 'flip_perc'])
         writer.writerow([inp['N'], inp['n_steps'], inp['n_analyze'], inp['flip_perc']])
         writer.writerow([])
-        writer.writerow(['Temp']+['d=%i'%i for i in range(1,len(corr[0])+1)])
-        for entry in corr:
-            writer.writerow(entry)
+        writer.writerow(['Temp']+[R_header(i)
+                                      for i in range(1,len(corr[0][1])+1)
+                                      for R_header in (lambda x: f"R_mean_d={x}", lambda x: f"R_std_d={x}")]) 
+        #Offsets calculated from the length of autocorrelation list for first temperature
+        for entry in corr:    
+            R_data = [R(d) for d in range(len(entry[1]))
+                      for R in (lambda x: entry[1][x], lambda x: entry[2][x])]   
+            row_data = [entry[0]] + R_data
+            writer.writerow(row_data)
 
 
 def run_indexed_process( inp, T, data_listener):
@@ -322,8 +334,16 @@ def run_indexed_process( inp, T, data_listener):
         E_std = np.std(E)
         M_mean = np.mean(M)
         M_std = np.std(M)
-        R_mean = np.mean(R)
-        R_std = np.std(R)
+ 
+        '''
+        Each element appended to corr is for a given final temperature temp as part of a trial
+        that scans temp. For each final temperature, R_mean[i] and R_std[i] are the average and
+        standard deviation of the autocorrelation with offset d = i+1 as computed in the last
+        n_analyze steps Averaging R over axis 0 averages with respect to the steps.
+        Indexing at 0 is because of numpy convention that an array is returned.
+        '''
+        R_mean = np.mean(R,axis=0)[0]
+        R_std = np.std(R,axis=0)[0]
         
         data_listener.put(([T,E_mean,E_std, M_mean, M_std], [T,R_mean,R_std]))
         # corr_listener.put([T,]+[x[1] for x in C])
@@ -403,10 +423,18 @@ def run_single_core(inp):
         E_std = np.std(E)
         M_mean = np.mean(M)
         M_std = np.std(M)
-        R_mean = np.mean(R)
-        R_std = np.std(R)
-        data.append( (E_mean, E_std, M_mean, M_std) )
-        corr.append( (temp, R_mean, R_std) )
+        '''
+        Each element appended to corr is for a given final temperature temp as part of a trial
+        that scans temp. For each final temperature, R_mean[i] and R_std[i] are the average and
+        standard deviation of the autocorrelation with offset d = i+1 as computed in the last
+        n_analyze steps Averaging R over axis 0 averages with respect to the steps.
+        Indexing at 0 is because of numpy convention that an array is returned.
+        '''
+        R_mean = np.mean(R,axis=0)[0] 
+        R_std = np.std(R,axis=0)[0]
+
+        data.append( (temp, E_mean, E_std, M_mean, M_std) )
+        corr.append( (temp, R_mean, R_std) )    
 
     print_results(inp, data, corr)
 
