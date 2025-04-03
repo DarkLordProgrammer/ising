@@ -69,18 +69,20 @@ def set_input(cmd_line_args):
     """
 
     inp = dict()
-    inp['t_min']      = 1.6    # minimum temperature
-    inp['t_max']      = 3.6    # maximum temperature
-    inp['t_step']     = 0.1    # step size from min to max temperature
+    inp['t_min']      = 2.4    # minimum temperature
+    inp['t_max']      = 2.8    # maximum temperature
+    inp['t_step']     = 0.01    # step size from min to max temperature
     inp['t_top']      = 4.0    # start temperature (arbitrary; feel free to change)
     inp['N']          = 10     # sqrt(lattice size) (i.e. lattice = N^2 points
-    inp['n_steps']    = 10000  # number of lattice steps in simulation
-    inp['n_burnin']   = int(0.2*inp['n_steps'])   # optional parameter, used as naive default
-    inp['n_analyze']  = int(0.5*inp['n_steps'])  # number of lattice steps at end of simulation calculated for averages and std.dev.
+    n_transfer = 3000
+    inp['n_analyze']  = 5000  # number of lattice steps at end of simulation calculated for averages and std.dev.
+    inp['n_burnin']   =  2000  # optional parameter, used as naive default
+    inp['n_steps']    = n_transfer + inp['n_analyze'] + inp['n_burnin']  # number of lattice steps in simulation    
+
     # inp['J']          = 1.0    # **great** default value -- spin-spin interaction strength
     inp['B']          = 0.0    # magnetic field strength
     inp['flip_perc']  = 0.1    # ratio of sites examined to flip in each step
-    inp['dir_out']    = 'data' # output directory for file output
+    inp['dir_out']    = 'data_close' # output directory for file output
     inp['plots']      = False  # whether or not plots are generated
                                
     inp['print_inp']  = False  # temperature option
