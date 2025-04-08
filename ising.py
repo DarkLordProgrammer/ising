@@ -76,7 +76,7 @@ def set_input(cmd_line_args):
     inp['N']          = 10     # sqrt(lattice size) (i.e. lattice = N^2 points
     n_transfer = 3000
     inp['n_analyze']  = 5000  # number of lattice steps at end of simulation calculated for averages and std.dev.
-    inp['n_burnin']   =  600  # optional parameter, used as naive default
+    inp['n_burnin']   =  10000  # optional parameter, used as naive default
     inp['n_steps']    = n_transfer + inp['n_analyze'] + inp['n_burnin']  # number of lattice steps in simulation    
 
     # inp['J']          = 1.0    # **great** default value -- spin-spin interaction strength
