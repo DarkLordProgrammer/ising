@@ -69,13 +69,13 @@ def set_input(cmd_line_args):
     """
 
     inp = dict()
-    inp['t_min']      = 1   # minimum temperature
-    inp['t_max']      = 3.5  # maximum temperature
+    inp['t_min']      = 2.1   # minimum temperature
+    inp['t_max']      = 2.3  # maximum temperature
     inp['t_step']     = 0.01    # step size from min to max temperature
     inp['t_top']      = 4.0    # start temperature (arbitrary; feel free to change)
     inp['N']          = 10     # sqrt(lattice size) (i.e. lattice = N^2 points
-    n_transfer = 20000
-    inp['n_analyze']  = 10000  # number of lattice steps at end of simulation calculated for averages and std.dev.
+    n_transfer = 2000
+    inp['n_analyze']  = 1000  # number of lattice steps at end of simulation calculated for averages and std.dev.
     inp['n_burnin']   =  1000  # optional parameter, used as naive default
     inp['n_steps']    = n_transfer + inp['n_analyze'] + inp['n_burnin']  # number of lattice steps in simulation    
 
@@ -227,7 +227,7 @@ def run_ising_lattice(inp, T_final, skip_print=False):
             lattice.step(T,B)
             E_avg.append(lattice.get_E())
             M_avg.append(lattice.get_M())
-            R.append(np.array(lattice.calc_auto_correlation()))
+            R.append(np.array([entry[1] for entry in lattice.calc_auto_correlation()]))
             progress.check()
         progress.check(True)
 
@@ -344,8 +344,8 @@ def run_indexed_process( inp, T, data_listener):
         n_analyze steps Averaging R over axis 0 averages with respect to the steps.
         Indexing at 0 is because of numpy convention that an array is returned.
         '''
-        R_mean = np.mean(R,axis=0)[0]
-        R_std = np.std(R,axis=0)[0]
+        R_mean = np.mean(R,axis=0)
+        R_std = np.std(R,axis=0)
         
         data_listener.put(([T,E_mean,E_std, M_mean, M_std], [T,R_mean,R_std]))
         # corr_listener.put([T,]+[x[1] for x in C])
@@ -432,8 +432,8 @@ def run_single_core(inp):
         n_analyze steps Averaging R over axis 0 averages with respect to the steps.
         Indexing at 0 is because of numpy convention that an array is returned.
         '''
-        R_mean = np.mean(R,axis=0)[0] 
-        R_std = np.std(R,axis=0)[0]
+        R_mean = np.mean(R,axis=0)
+        R_std = np.std(R,axis=0)
 
         data.append( (temp, E_mean, E_std, M_mean, M_std) )
         corr.append( (temp, R_mean, R_std) )    
