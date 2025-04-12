@@ -73,7 +73,7 @@ def set_input(cmd_line_args):
     inp['t_max']      = 2.3  # maximum temperature
     inp['t_step']     = 0.01    # step size from min to max temperature
     inp['t_top']      = 4.0    # start temperature (arbitrary; feel free to change)
-    inp['N']          = 10     # sqrt(lattice size) (i.e. lattice = N^2 points
+    inp['N']          = 30     # sqrt(lattice size) (i.e. lattice = N^2 points
     n_transfer = 2000
     inp['n_analyze']  = 1000  # number of lattice steps at end of simulation calculated for averages and std.dev.
     inp['n_burnin']   =  1000  # optional parameter, used as naive default
