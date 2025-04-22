@@ -105,6 +105,7 @@ def set_input(cmd_line_args):
     inp['file_prefix'] = ''
     inp['multiprocess'] = False
     inp['skip_prog_print'] = False
+    inp['print_last_spin']  =True
 
     for x in cmd_line_args[1:]:
         if ':' in x:
@@ -243,13 +244,17 @@ def run_ising_lattice(inp, T_final, skip_print=False):
             R.append(np.array([entry[1] for entry in lattice.calc_auto_correlation()]))
             progress.check()
         progress.check(True)
-
+        if inp['print_last_spin']:            
+            last_spin_matrix = lattice.get_numpy_spin_matrix()
+        else:
+            last_spin_matrix = None
 
         lattice.free_memory()
         return (
             np.array(E_avg),
             np.array(M_avg),
-            np.array(R)
+            np.array(R),
+            last_spin_matrix
         )
 
     except KeyboardInterrupt:
@@ -304,14 +309,15 @@ def get_filenames(inp): #make data folder if doesn't exist, then specify filenam
             v += 1
 
         return ( os.path.join(dir_out, '%s%s_EM_v%i.csv'%(prefix,t_name,v)),
-                 os.path.join(dir_out, '%s%s_SC_v%i.csv'%(prefix,t_name,v)) )
+                 os.path.join(dir_out, '%s%s_SC_v%i.csv'%(prefix,t_name,v)),
+                 os.path.join(dir_out, '%s%s_LS_v%i.csv'%(prefix,t_name,v)) )
 
     except:
         print ('fatal: Failed to make output file names')
         sys.exit()
 
-def print_results(inp, data, corr):
-    data_filename, corr_filename = get_filenames(inp)
+def print_results(inp, data, corr, last_spins_mats=[None]):
+    data_filename, corr_filename, last_spins_mats_filename = get_filenames(inp)
     with open(data_filename,'w') as f_out:
         writer = csv.writer(f_out, delimiter=',', lineterminator='\n')
         writer.writerow(['N', 'n_steps', 'n_analyze', 'flip_perc'])
@@ -338,13 +344,21 @@ def print_results(inp, data, corr):
             row_data = [entry[0]] + R_data
             writer.writerow(row_data)
 
+    if last_spins_mats[0] is not None:
+        with open(last_spins_mats_filename,'w') as f_out:
+            writer = csv.writer(f_out, delimiter=',', lineterminator='\n')
+            writer.writerow(['N', 'n_steps', 'n_analyze', 'flip_perc', 'T'])
+            writer.writerow([inp['N'], inp['n_steps'], inp['n_analyze'], inp['flip_perc'], inp['t_min']])
+            writer.writerow([])
+            for row in last_spins_mats[0]: #Write out the T = t_min spin matrix rowwise
+                writer.writerow(row)
 
 def run_indexed_process( inp, T, data_listener):
 # def run_simulation(
 #         temp, n, num_steps, num_burnin, num_analysis, flip_prop, j, b, data_filename, corr_filename, data_listener, corr_listener):
     print("Starting Temp {0}".format(round(T,3)))
     try:
-        E, M, R = run_ising_lattice(inp, T, skip_print=True) #Lists of microstate values for the analyze stage
+        E, M, R, last_spin_matrix = run_ising_lattice(inp, T, skip_print=True) #Lists of microstate values for the analyze stage
         E_mean = np.mean(E)
         E_std = np.std(E)
         M_mean = np.mean(M)
@@ -432,8 +446,9 @@ def run_single_core(inp):
     # sequentially run through the desired temperatures and collect the output for each temperature
     data = []
     corr = []
+    last_spin_mats = []
     for temp in make_T_array(inp):
-        E, M, R = run_ising_lattice(inp, temp, skip_print=inp['skip_prog_print'])
+        E, M, R, last_spin_matrix = run_ising_lattice(inp, temp, skip_print=inp['skip_prog_print'])
         E_mean = np.mean(E)
         E_std = np.std(E)
         M_mean = np.mean(M)
@@ -450,8 +465,9 @@ def run_single_core(inp):
 
         data.append( (temp, E_mean, E_std, M_mean, M_std) )
         corr.append( (temp, R_mean, R_std) )    
+        last_spin_mats.append(last_spin_matrix)
 
-    print_results(inp, data, corr)
+    print_results(inp, data, corr, last_spin_mats)
 
     if inp['plots']:
         plot_graphs(data)
