@@ -82,22 +82,23 @@ def set_input(cmd_line_args):
     """
 
     inp = dict()
-    inp['t_min']      = 2.26-0.1   # minimum temperature
-    inp['t_max']      = 2.26+0.1  # maximum temperature
+    inp['t_min']      = 3.00   # minimum temperature
+    inp['t_max']      = 3.00  # maximum temperature
     inp['t_step']     = 0.01    # step size from min to max temperature
     inp['t_top']      = 4.0    # start temperature (arbitrary; feel free to change)
-    inp['N']          = 30     # sqrt(lattice size) (i.e. lattice = N^2 points
-    n_transfer = 2000
-    inp['n_analyze']  = 5000  # number of lattice steps at end of simulation calculated for averages and std.dev.
-    inp['n_burnin']   =  1000  # optional parameter, used as naive default
-    inp['n_steps']    = n_transfer + inp['n_analyze'] + inp['n_burnin']  # number of lattice steps in simulation    
+    inp['N']          = 10     # sqrt(lattice size) (i.e. lattice = N^2 points
+    n_anneal = 10000
+    inp['n_analyze']  = 10000  # number of lattice steps at end of simulation calculated for averages and std.dev.
+    inp['n_burnin']   =  10000  # optional parameter, used as naive default
+    inp['n_steps']    = n_anneal + inp['n_analyze'] + inp['n_burnin']  # number of lattice steps in simulation    
 
     # inp['J']          = 1.0    # **great** default value -- spin-spin interaction strength
     inp['B']          = 0.0    # magnetic field strength
     inp['flip_perc']  = 0.1    # ratio of sites examined to flip in each step
-    inp['dir_out']    = 'data_corr_testing' # output directory for fil+e output
+    inp['dir_out']    = 'data_for_plots' # output directory for fil+e output
     inp['plots']      = False  # whether or not plots are generated
-                               
+
+    inp['print_last_spin']  =True # print the last spin matrix to file                           
     inp['print_inp']  = False  # temperature option
     inp['use_cpp']    = False   # use 1 for True and 0 for False
 
@@ -105,7 +106,7 @@ def set_input(cmd_line_args):
     inp['file_prefix'] = ''
     inp['multiprocess'] = False
     inp['skip_prog_print'] = False
-    inp['print_last_spin']  =True
+    
 
     for x in cmd_line_args[1:]:
         if ':' in x:
