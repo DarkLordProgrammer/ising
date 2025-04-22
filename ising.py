@@ -28,8 +28,21 @@ def make_B_generator(inp, t_final=None):
     
     default implementation: always return 0
     """
-    for val in range(inp['n_steps']):
-        yield inp['B']
+    n_slope = inp['n_steps'] - inp['n_burnin'] - inp['n_analyze']
+    if n_slope < 0:
+        print('fatal error: n_steps - n_burnin - n_slope < 0')
+        print('terminating program')
+        exit(2)
+
+    # get linearly decreasing values from B to 0
+    for val in np.linspace(start=inp['B'], stop=0, num=n_slope):
+        yield val
+
+    for val in range(inp['n_burnin']):
+        yield 0
+
+    for val in range(inp['n_analyze']):
+        yield 0
 
 def make_T_generator(inp, t_final):
     """Return a generator that makes values of T (temperature in each step)
