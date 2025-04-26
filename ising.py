@@ -82,23 +82,23 @@ def set_input(cmd_line_args):
     """
 
     inp = dict()
-    inp['t_min']      = 100.00   # minimum temperature
-    inp['t_max']      = 100.00  # maximum temperature
-    inp['t_step']     = 0.01    # step size from min to max temperature
-    inp['t_top']      = 2*inp['t_max']    # start temperature (arbitrary; feel free to change)
+    inp['t_min']      = 2.15   # minimum temperature
+    inp['t_max']      = 2.5  # maximum temperature
+    inp['t_step']     = 0.05    # step size from min to max temperature
+    inp['t_top']      = 4.0    # start temperature (arbitrary; feel free to change)
     inp['N']          = 10     # sqrt(lattice size) (i.e. lattice = N^2 points
-    n_anneal = 10000
-    inp['n_analyze']  = 10000  # number of lattice steps at end of simulation calculated for averages and std.dev.
-    inp['n_burnin']   =  10000  # optional parameter, used as naive default
+    n_anneal = 2000
+    inp['n_analyze']  = 5000  # number of lattice steps at end of simulation calculated for averages and std.dev.
+    inp['n_burnin']   =  2000  # optional parameter, used as naive default
     inp['n_steps']    = n_anneal + inp['n_analyze'] + inp['n_burnin']  # number of lattice steps in simulation    
 
     # inp['J']          = 1.0    # **great** default value -- spin-spin interaction strength
-    inp['B']          = 0.1    # magnetic field strength
+    inp['B']          = 0    # magnetic field strength
     inp['flip_perc']  = 0.1    # ratio of sites examined to flip in each step
-    inp['dir_out']    = 'data_for_plots' # output directory for fil+e output
-    inp['plots']      = False  # whether or not plots are generated
+    inp['dir_out']    = 'data_debugging' # output directory for file output
+    inp['plots']      = True  # whether or not plots are generated
 
-    inp['print_last_spin']  =True # print the last spin matrix to file                           
+    inp['print_last_spin']  = False # print the last spin matrix to file                           
     inp['print_inp']  = False  # temperature option
     inp['use_cpp']    = False   # use 1 for True and 0 for False
 
@@ -324,7 +324,7 @@ def print_results(inp, data, corr, last_spins_mats=[None]):
         writer.writerow(['N', 'n_steps', 'n_analyze', 'flip_perc'])
         writer.writerow([inp['N'], inp['n_steps'], inp['n_analyze'], inp['flip_perc']])
         writer.writerow([])
-        writer.writerow(['Temp','E_mean','E_std','M_mean','M_std'])
+        writer.writerow(['Temp','E_mean','E_std','M_mean','M_std','M_abs_mean','M_abs_std'])
         for entry in data:
             writer.writerow(entry)
         # for t, e_mean, e_std, m_mean, m_std in zip(T, E_mean, E_std, M_mean, M_std):
@@ -454,6 +454,9 @@ def run_single_core(inp):
         E_std = np.std(E)
         M_mean = np.mean(M)
         M_std = np.std(M)
+        M_abs_mean = np.mean(np.abs(M))
+        M_abs_std = np.std(np.abs(M))   
+    
         '''
         Each element appended to corr is for a given final temperature temp as part of a trial
         that scans temp. For each final temperature, R_mean[i] and R_std[i] are the average and
@@ -464,7 +467,7 @@ def run_single_core(inp):
         R_mean = np.mean(R,axis=0)
         R_std = np.std(R,axis=0)
 
-        data.append( (temp, E_mean, E_std, M_mean, M_std) )
+        data.append( (temp, E_mean, E_std, M_mean, M_std, M_abs_mean, M_abs_std) )
         corr.append( (temp, R_mean, R_std) )    
         last_spin_mats.append(last_spin_matrix)
 
